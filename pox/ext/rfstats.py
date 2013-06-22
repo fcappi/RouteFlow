@@ -9,6 +9,7 @@ from pox.topology.topology import *
 import time
 import json
 import pymongo
+from rflib.defs import *
 
 UPDATE_INTERVAL = 5
 topology_timer = None
@@ -21,8 +22,21 @@ def rf_id(id):
 class StatsDB:
     def __init__(self):
         self.db = {}
-        self.connection = pymongo.Connection()
-        self.collection = self.connection.db.rfstats
+        self.connection = None
+        self.collection = None
+        self.connect()
+        
+    def connect(self):
+        try:
+            self.connection = pymongo.MongoClient(MONGO_ADDRESS, replicaSet='rs0')
+            self.collection = self.connection.db.rfstats
+            #self._producer_connection.write_concern = {'w':1, 'wtimeout': 1000}
+            #print "DBINFO: Connection established with the following default write concern -> ", self.connection.write_concern
+        except pymongo.errors.AutoReconnect:
+            print "Warning: Connection to Database failed. Trying to auto reconnect..."
+        except pymongo.errors.ConnectionFailure:
+            print "Warning: Connection to Database failed. Some operations might not be completed!"
+            print "ERR2; ", sys.exc_info()
 
     def update(self, id_, type_, links=None, **data):
         if id_ not in self.db:
@@ -41,15 +55,42 @@ class StatsDB:
             self.db[id_]["data"][k] = v
 
         self.db[id_]["_id"] = id_
-        self.collection.update({"_id": id_}, self.db[id_], upsert=True)
+        self.connect()
+        
+        for i in xrange(0, MONGO_MAX_RETRIES):
+            try:
+                self.collection.update({"_id": id_}, self.db[id_], upsert=True)
+                
+                break;
+            except:
+                if (i + 1) == MONGO_MAX_RETRIES:
+                    print "[ERROR]RFSTATS: id ", id_, "could not be updated. Error: (", sys.exc_info(), ")"
+                    sys.exit(1)
+                        
+                print "[RECOVERING]RFSTATS: id ", id_, "could not be updated. Trying again in ", MONGO_RETRY_INTERVAL, " seconds. [",  (i+1),  "]"                
+                time.sleep(MONGO_RETRY_INTERVAL)
+        
+        print "[OK]RFSTATS: id ", id_, " successful updated"  
 
     def delete(self, id_):
-        try:
-            del self.db[id_]
-            self.collection.remove(id_)
-            return True
-        except:
-            return False
+        self.connect()
+        del self.db[id_]
+        
+        for i in xrange(0, MONGO_MAX_RETRIES):
+            try:
+                self.collection.remove(id_)
+                
+                break;
+            except:
+                if (i + 1) == MONGO_MAX_RETRIES:
+                    print "[ERROR]RFSTATS: id ", id_, " could not be deleted. Error: (", sys.exc_info(), ")"
+                    sys.exit(1)
+                    
+                print "[RECOVERING]RFSTATS: id ", id_, " could not be deleted. Trying again in ", MONGO_RETRY_INTERVAL, " seconds. [",  (i+1),  "]"
+                time.sleep(MONGO_RETRY_INTERVAL)
+                
+        print "[OK]RFSTATS: id ", id_, " successful deleted"
+        return True
             
     @staticmethod
     def create_desc_stats_dict(desc):

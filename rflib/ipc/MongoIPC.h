@@ -2,6 +2,7 @@
 #define __MONGOIPC_H__
 
 #include <mongo/client/dbclient.h>
+#include <mongo/client/dbclient_rs.h>
 #include "IPC.h"
 
 #define FROM_FIELD "from"
@@ -16,29 +17,44 @@
 // Handle a maximum of 10 messages at a time
 #define PENDINGLIMIT 10
 
-mongo::BSONObj putInEnvelope(const string &from, const string &to, IPCMessage &msg);
-IPCMessage* takeFromEnvelope(mongo::BSONObj envelope, IPCMessageFactory *factory);
+mongo::BSONObj putInEnvelope(const string &from, const string &to,
+		IPCMessage &msg);
+IPCMessage* takeFromEnvelope(mongo::BSONObj envelope,
+		IPCMessageFactory *factory);
 
 /** An IPC message service that uses MongoDB as its backend. */
-class MongoIPCMessageService : public IPCMessageService {
-    public:
-        /** Creates and starts an IPC message service using MongoDB.
-        @param address the address and port of the mongo server in the format 
-                       address:port
-        @param db the name of the database to use
-        @param id the ID of this IPC service user */
-        MongoIPCMessageService(const string &address, const string db, const string id);
-        virtual void listen(const string &channelId, IPCMessageFactory *factory, IPCMessageProcessor *processor, bool block=true);
-        virtual bool send(const string &channelId, const string &to, IPCMessage& msg);
-        
-    private:
-        string db;
-        string address;
-        mongo::DBClientConnection producerConnection;
-        boost::mutex ipcMutex;
-        void listenWorker(const string &channelId, IPCMessageFactory *factory, IPCMessageProcessor *processor);
-        void createChannel(mongo::DBClientConnection &con, const string &ns);
-        void connect(mongo::DBClientConnection &connection, const string &address);
+class MongoIPCMessageService: public IPCMessageService {
+public:
+	/** Creates and starts an IPC message service using MongoDB.
+	 @param connectionUri MongoDB connection URI used to connect to a MongoDB database server
+	 @param dbName The name of the database to use
+	 @param ipcUserId The ID of this IPC service user*/
+	MongoIPCMessageService(const string &connectionUri, const string dbName,
+			const string ipcUserId);
+	virtual void listen(const string &channelId, IPCMessageFactory *factory,
+			IPCMessageProcessor *processor, bool block = true);
+	virtual bool send(const string &channelId, const string &to,
+			IPCMessage& msg);
+
+private:
+	string dbName;
+	string connectionUri;
+	mongo::DBClientBase *databaseConnection;
+	boost::mutex ipcMutex;
+	void listenWorker(const string &channelId, IPCMessageFactory *factory,
+			IPCMessageProcessor *processor);
+	void createChannel(const string &ns);
+	/*
+	 * Establishes a connection with the database
+	 */
+	void connect();
+	/**
+	 * returns collection namespace in the format: database_name.collection
+	 *
+	 * @param collection The collection
+	 * @return The namespace
+	 */
+	string getNamespace(const string &collection);
 };
 
 #endif /* __MONGOIPC_H__ */

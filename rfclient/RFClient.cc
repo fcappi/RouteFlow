@@ -280,7 +280,7 @@ int main(int argc, char* argv[]) {
     char c;
     stringstream ss;
     string id;
-    string address = MONGO_ADDRESS;
+    string address = MONGO_CONNECTION_URI;
 
     while ((c = getopt (argc, argv, "n:i:a:")) != -1)
         switch (c) {
