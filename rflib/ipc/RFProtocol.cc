@@ -42,24 +42,6 @@ void PortRegister::set_hwaddress(MACAddress hwaddress) {
     this->hwaddress = hwaddress;
 }
 
-void PortRegister::from_BSON(const char* data) {
-    mongo::BSONObj obj(data);
-    set_vm_id(string_to<uint64_t>(obj["vm_id"].String()));
-    set_vm_port(string_to<uint32_t>(obj["vm_port"].String()));
-    set_hwaddress(MACAddress(obj["hwaddress"].String()));
-}
-
-const char* PortRegister::to_BSON() {
-    mongo::BSONObjBuilder _b;
-    _b.append("vm_id", to_string<uint64_t>(get_vm_id()));
-    _b.append("vm_port", to_string<uint32_t>(get_vm_port()));
-    _b.append("hwaddress", get_hwaddress().toString());
-    mongo::BSONObj o = _b.obj();
-    char* data = new char[o.objsize()];
-    memcpy(data, o.objdata(), o.objsize());
-    return data;
-}
-
 string PortRegister::str() {
     stringstream ss;
     ss << "PortRegister" << endl;
@@ -107,24 +89,6 @@ uint32_t PortConfig::get_operation_id() {
 
 void PortConfig::set_operation_id(uint32_t operation_id) {
     this->operation_id = operation_id;
-}
-
-void PortConfig::from_BSON(const char* data) {
-    mongo::BSONObj obj(data);
-    set_vm_id(string_to<uint64_t>(obj["vm_id"].String()));
-    set_vm_port(string_to<uint32_t>(obj["vm_port"].String()));
-    set_operation_id(string_to<uint32_t>(obj["operation_id"].String()));
-}
-
-const char* PortConfig::to_BSON() {
-    mongo::BSONObjBuilder _b;
-    _b.append("vm_id", to_string<uint64_t>(get_vm_id()));
-    _b.append("vm_port", to_string<uint32_t>(get_vm_port()));
-    _b.append("operation_id", to_string<uint32_t>(get_operation_id()));
-    mongo::BSONObj o = _b.obj();
-    char* data = new char[o.objsize()];
-    memcpy(data, o.objdata(), o.objsize());
-    return data;
 }
 
 string PortConfig::str() {
@@ -176,24 +140,6 @@ void DatapathPortRegister::set_dp_port(uint32_t dp_port) {
     this->dp_port = dp_port;
 }
 
-void DatapathPortRegister::from_BSON(const char* data) {
-    mongo::BSONObj obj(data);
-    set_ct_id(string_to<uint64_t>(obj["ct_id"].String()));
-    set_dp_id(string_to<uint64_t>(obj["dp_id"].String()));
-    set_dp_port(string_to<uint32_t>(obj["dp_port"].String()));
-}
-
-const char* DatapathPortRegister::to_BSON() {
-    mongo::BSONObjBuilder _b;
-    _b.append("ct_id", to_string<uint64_t>(get_ct_id()));
-    _b.append("dp_id", to_string<uint64_t>(get_dp_id()));
-    _b.append("dp_port", to_string<uint32_t>(get_dp_port()));
-    mongo::BSONObj o = _b.obj();
-    char* data = new char[o.objsize()];
-    memcpy(data, o.objdata(), o.objsize());
-    return data;
-}
-
 string DatapathPortRegister::str() {
     stringstream ss;
     ss << "DatapathPortRegister" << endl;
@@ -231,22 +177,6 @@ uint64_t DatapathDown::get_dp_id() {
 
 void DatapathDown::set_dp_id(uint64_t dp_id) {
     this->dp_id = dp_id;
-}
-
-void DatapathDown::from_BSON(const char* data) {
-    mongo::BSONObj obj(data);
-    set_ct_id(string_to<uint64_t>(obj["ct_id"].String()));
-    set_dp_id(string_to<uint64_t>(obj["dp_id"].String()));
-}
-
-const char* DatapathDown::to_BSON() {
-    mongo::BSONObjBuilder _b;
-    _b.append("ct_id", to_string<uint64_t>(get_ct_id()));
-    _b.append("dp_id", to_string<uint64_t>(get_dp_id()));
-    mongo::BSONObj o = _b.obj();
-    char* data = new char[o.objsize()];
-    memcpy(data, o.objdata(), o.objsize());
-    return data;
 }
 
 string DatapathDown::str() {
@@ -305,26 +235,6 @@ uint32_t VirtualPlaneMap::get_vs_port() {
 
 void VirtualPlaneMap::set_vs_port(uint32_t vs_port) {
     this->vs_port = vs_port;
-}
-
-void VirtualPlaneMap::from_BSON(const char* data) {
-    mongo::BSONObj obj(data);
-    set_vm_id(string_to<uint64_t>(obj["vm_id"].String()));
-    set_vm_port(string_to<uint32_t>(obj["vm_port"].String()));
-    set_vs_id(string_to<uint64_t>(obj["vs_id"].String()));
-    set_vs_port(string_to<uint32_t>(obj["vs_port"].String()));
-}
-
-const char* VirtualPlaneMap::to_BSON() {
-    mongo::BSONObjBuilder _b;
-    _b.append("vm_id", to_string<uint64_t>(get_vm_id()));
-    _b.append("vm_port", to_string<uint32_t>(get_vm_port()));
-    _b.append("vs_id", to_string<uint64_t>(get_vs_id()));
-    _b.append("vs_port", to_string<uint32_t>(get_vs_port()));
-    mongo::BSONObj o = _b.obj();
-    char* data = new char[o.objsize()];
-    memcpy(data, o.objdata(), o.objsize());
-    return data;
 }
 
 string VirtualPlaneMap::str() {
@@ -395,28 +305,6 @@ uint32_t DataPlaneMap::get_vs_port() {
 
 void DataPlaneMap::set_vs_port(uint32_t vs_port) {
     this->vs_port = vs_port;
-}
-
-void DataPlaneMap::from_BSON(const char* data) {
-    mongo::BSONObj obj(data);
-    set_ct_id(string_to<uint64_t>(obj["ct_id"].String()));
-    set_dp_id(string_to<uint64_t>(obj["dp_id"].String()));
-    set_dp_port(string_to<uint32_t>(obj["dp_port"].String()));
-    set_vs_id(string_to<uint64_t>(obj["vs_id"].String()));
-    set_vs_port(string_to<uint32_t>(obj["vs_port"].String()));
-}
-
-const char* DataPlaneMap::to_BSON() {
-    mongo::BSONObjBuilder _b;
-    _b.append("ct_id", to_string<uint64_t>(get_ct_id()));
-    _b.append("dp_id", to_string<uint64_t>(get_dp_id()));
-    _b.append("dp_port", to_string<uint32_t>(get_dp_port()));
-    _b.append("vs_id", to_string<uint64_t>(get_vs_id()));
-    _b.append("vs_port", to_string<uint32_t>(get_vs_port()));
-    mongo::BSONObj o = _b.obj();
-    char* data = new char[o.objsize()];
-    memcpy(data, o.objdata(), o.objsize());
-    return data;
 }
 
 string DataPlaneMap::str() {
@@ -500,28 +388,6 @@ void RouteMod::set_options(std::vector<Option> options) {
 
 void RouteMod::add_option(const Option& option) {
     this->options.push_back(option);
-}
-
-void RouteMod::from_BSON(const char* data) {
-    mongo::BSONObj obj(data);
-    set_mod(string_to<uint8_t>(obj["mod"].String()));
-    set_id(string_to<uint64_t>(obj["id"].String()));
-    set_matches(MatchList::to_vector(obj["matches"].Array()));
-    set_actions(ActionList::to_vector(obj["actions"].Array()));
-    set_options(OptionList::to_vector(obj["options"].Array()));
-}
-
-const char* RouteMod::to_BSON() {
-    mongo::BSONObjBuilder _b;
-    _b.append("mod", to_string<uint16_t>(get_mod()));
-    _b.append("id", to_string<uint64_t>(get_id()));
-    _b.appendArray("matches", MatchList::to_BSON(get_matches()));
-    _b.appendArray("actions", ActionList::to_BSON(get_actions()));
-    _b.appendArray("options", OptionList::to_BSON(get_options()));
-    mongo::BSONObj o = _b.obj();
-    char* data = new char[o.objsize()];
-    memcpy(data, o.objdata(), o.objsize());
-    return data;
 }
 
 string RouteMod::str() {

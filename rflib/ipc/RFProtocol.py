@@ -4,7 +4,7 @@ import pymongo as mongo
 from rflib.types.Match import Match
 from rflib.types.Action import Action
 from rflib.types.Option import Option
-from MongoIPC import MongoIPCMessage
+from Ipc import IpcMessage
 
 format_id = lambda dp_id: hex(dp_id).rstrip('L')
 
@@ -16,8 +16,9 @@ VIRTUAL_PLANE_MAP = 4
 DATA_PLANE_MAP = 5
 ROUTE_MOD = 6
 
-class PortRegister(MongoIPCMessage):
+class PortRegister(IpcMessage):
     def __init__(self, vm_id=None, vm_port=None, hwaddress=None):
+        IpcMessage.__init__(self)
         self.set_vm_id(vm_id)
         self.set_vm_port(vm_port)
         self.set_hwaddress(hwaddress)
@@ -67,13 +68,6 @@ class PortRegister(MongoIPCMessage):
         data["hwaddress"] = str(self.get_hwaddress())
         return data
 
-    def from_bson(self, data):
-        data = bson.BSON.decode(data)
-        self.from_dict(data)
-
-    def to_bson(self):
-        return bson.BSON.encode(self.get_dict())
-
     def __str__(self):
         s = "PortRegister\n"
         s += "  vm_id: " + format_id(self.get_vm_id()) + "\n"
@@ -81,8 +75,9 @@ class PortRegister(MongoIPCMessage):
         s += "  hwaddress: " + str(self.get_hwaddress()) + "\n"
         return s
 
-class PortConfig(MongoIPCMessage):
+class PortConfig(IpcMessage):
     def __init__(self, vm_id=None, vm_port=None, operation_id=None):
+        IpcMessage.__init__(self)
         self.set_vm_id(vm_id)
         self.set_vm_port(vm_port)
         self.set_operation_id(operation_id)
@@ -132,13 +127,6 @@ class PortConfig(MongoIPCMessage):
         data["operation_id"] = str(self.get_operation_id())
         return data
 
-    def from_bson(self, data):
-        data = bson.BSON.decode(data)
-        self.from_dict(data)
-
-    def to_bson(self):
-        return bson.BSON.encode(self.get_dict())
-
     def __str__(self):
         s = "PortConfig\n"
         s += "  vm_id: " + format_id(self.get_vm_id()) + "\n"
@@ -146,8 +134,9 @@ class PortConfig(MongoIPCMessage):
         s += "  operation_id: " + str(self.get_operation_id()) + "\n"
         return s
 
-class DatapathPortRegister(MongoIPCMessage):
+class DatapathPortRegister(IpcMessage):
     def __init__(self, ct_id=None, dp_id=None, dp_port=None):
+        IpcMessage.__init__(self)
         self.set_ct_id(ct_id)
         self.set_dp_id(dp_id)
         self.set_dp_port(dp_port)
@@ -197,13 +186,6 @@ class DatapathPortRegister(MongoIPCMessage):
         data["dp_port"] = str(self.get_dp_port())
         return data
 
-    def from_bson(self, data):
-        data = bson.BSON.decode(data)
-        self.from_dict(data)
-
-    def to_bson(self):
-        return bson.BSON.encode(self.get_dict())
-
     def __str__(self):
         s = "DatapathPortRegister\n"
         s += "  ct_id: " + format_id(self.get_ct_id()) + "\n"
@@ -211,8 +193,9 @@ class DatapathPortRegister(MongoIPCMessage):
         s += "  dp_port: " + str(self.get_dp_port()) + "\n"
         return s
 
-class DatapathDown(MongoIPCMessage):
+class DatapathDown(IpcMessage):
     def __init__(self, ct_id=None, dp_id=None):
+        IpcMessage.__init__(self)
         self.set_ct_id(ct_id)
         self.set_dp_id(dp_id)
 
@@ -249,21 +232,15 @@ class DatapathDown(MongoIPCMessage):
         data["dp_id"] = str(self.get_dp_id())
         return data
 
-    def from_bson(self, data):
-        data = bson.BSON.decode(data)
-        self.from_dict(data)
-
-    def to_bson(self):
-        return bson.BSON.encode(self.get_dict())
-
     def __str__(self):
         s = "DatapathDown\n"
         s += "  ct_id: " + format_id(self.get_ct_id()) + "\n"
         s += "  dp_id: " + format_id(self.get_dp_id()) + "\n"
         return s
 
-class VirtualPlaneMap(MongoIPCMessage):
+class VirtualPlaneMap(IpcMessage):
     def __init__(self, vm_id=None, vm_port=None, vs_id=None, vs_port=None):
+        IpcMessage.__init__(self)
         self.set_vm_id(vm_id)
         self.set_vm_port(vm_port)
         self.set_vs_id(vs_id)
@@ -326,13 +303,6 @@ class VirtualPlaneMap(MongoIPCMessage):
         data["vs_port"] = str(self.get_vs_port())
         return data
 
-    def from_bson(self, data):
-        data = bson.BSON.decode(data)
-        self.from_dict(data)
-
-    def to_bson(self):
-        return bson.BSON.encode(self.get_dict())
-
     def __str__(self):
         s = "VirtualPlaneMap\n"
         s += "  vm_id: " + format_id(self.get_vm_id()) + "\n"
@@ -341,8 +311,9 @@ class VirtualPlaneMap(MongoIPCMessage):
         s += "  vs_port: " + str(self.get_vs_port()) + "\n"
         return s
 
-class DataPlaneMap(MongoIPCMessage):
+class DataPlaneMap(IpcMessage):
     def __init__(self, ct_id=None, dp_id=None, dp_port=None, vs_id=None, vs_port=None):
+        IpcMessage.__init__(self)
         self.set_ct_id(ct_id)
         self.set_dp_id(dp_id)
         self.set_dp_port(dp_port)
@@ -418,13 +389,6 @@ class DataPlaneMap(MongoIPCMessage):
         data["vs_port"] = str(self.get_vs_port())
         return data
 
-    def from_bson(self, data):
-        data = bson.BSON.decode(data)
-        self.from_dict(data)
-
-    def to_bson(self):
-        return bson.BSON.encode(self.get_dict())
-
     def __str__(self):
         s = "DataPlaneMap\n"
         s += "  ct_id: " + format_id(self.get_ct_id()) + "\n"
@@ -434,8 +398,9 @@ class DataPlaneMap(MongoIPCMessage):
         s += "  vs_port: " + str(self.get_vs_port()) + "\n"
         return s
 
-class RouteMod(MongoIPCMessage):
+class RouteMod(IpcMessage):
     def __init__(self, mod=None, id=None, matches=None, actions=None, options=None):
+        IpcMessage.__init__(self)
         self.set_mod(mod)
         self.set_id(id)
         self.set_matches(matches)
@@ -519,13 +484,6 @@ class RouteMod(MongoIPCMessage):
         data["actions"] = self.get_actions()
         data["options"] = self.get_options()
         return data
-
-    def from_bson(self, data):
-        data = bson.BSON.decode(data)
-        self.from_dict(data)
-
-    def to_bson(self):
-        return bson.BSON.encode(self.get_dict())
 
     def __str__(self):
         s = "RouteMod\n"

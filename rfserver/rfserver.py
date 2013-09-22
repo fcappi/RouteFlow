@@ -10,10 +10,9 @@ import argparse
 
 from bson.binary import Binary
 
-import rflib.ipc.IPC as IPC
-import rflib.ipc.MongoIPC as MongoIPC
+import rflib.ipc.Ipc as Ipc
+import rflib.ipc.MongoIpc as MongoIpc
 from rflib.ipc.RFProtocol import *
-from rflib.ipc.RFProtocolFactory import RFProtocolFactory
 from rflib.defs import *
 from rflib.types.Match import *
 from rflib.types.Action import *
@@ -26,7 +25,7 @@ REGISTER_IDLE = 0
 REGISTER_ASSOCIATED = 1
 REGISTER_ISL = 2
 
-class RFServer(RFProtocolFactory, IPC.IPCMessageProcessor):
+class RFServer(Ipc.IpcMessageProcessor):
     def __init__(self, configfile, islconffile):
         self.rftable = RFTable()
         self.isltable = RFISLTable()
@@ -40,15 +39,12 @@ class RFServer(RFProtocolFactory, IPC.IPCMessageProcessor):
         ch.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
         self.log.addHandler(ch)
 
-        self.ipc = MongoIPC.MongoIPCMessageService(MONGO_ADDRESS,
-                                                   MONGO_DB_NAME,
-                                                   RFSERVER_ID,
-                                                   threading.Thread,
-                                                   time.sleep)
-        self.ipc.listen(RFCLIENT_RFSERVER_CHANNEL, self, self, False)
-        self.ipc.listen(RFSERVER_RFPROXY_CHANNEL, self, self, True)
+        self.ipc_for_proxy = MongoIpc.MongoIpc(RFSERVER_ID, RFSERVER_RFPROXY_CHANNEL)
+        self.ipc_for_client = MongoIpc.MongoIpc(RFSERVER_ID, RFCLIENT_RFSERVER_CHANNEL)
+        self.ipc_for_client.parallel_listen(self)
+        self.ipc_for_proxy.listen(self)
 
-    def process(self, from_, to, channel, msg):
+    def process(self, msg):
         type_ = msg.get_type()
         if type_ == PORT_REGISTER:
             self.register_vm_port(msg.get_vm_id(), msg.get_vm_port(),
@@ -104,8 +100,10 @@ class RFServer(RFProtocolFactory, IPC.IPCMessageProcessor):
                              format_id(entry.dp_id), entry.dp_port))
 
     def config_vm_port(self, vm_id, vm_port):
-        self.ipc.send(RFCLIENT_RFSERVER_CHANNEL, str(vm_id),
-                      PortConfig(vm_id=vm_id, vm_port=vm_port, operation_id=0))
+        msg = PortConfig(vm_id=vm_id, vm_port=vm_port, operation_id=0)
+        msg.set_from(RFSERVER_ID)
+        msg.set_to(str(vm_id))
+        self.ipc_for_client.send(msg)
         self.log.info("Asking client for mapping message for port "
                       "(vm_id=%s, vm_port=%i)" % (format_id(vm_id), vm_port))
 
@@ -182,8 +180,9 @@ class RFServer(RFProtocolFactory, IPC.IPCMessageProcessor):
                    entry.get_status() == RFISL_ACTIVE:
                     rm.add_match(Match.ETHERNET(entry.eth_addr))
                     rm.add_match(Match.IN_PORT(entry.dp_port))
-                    self.ipc.send(RFSERVER_RFPROXY_CHANNEL,
-                                  str(entry.ct_id), rm)
+                    rm.set_from(RFSERVER_ID)
+                    rm.set_to(str(entry.ct_id))
+                    self.ipc_for_proxy.send(rm)
                     rm.set_matches(rm.get_matches()[:-2])
 
     # DatapathPortRegister methods
@@ -331,7 +330,9 @@ class RFServer(RFProtocolFactory, IPC.IPCMessageProcessor):
             rm.add_action(Action.CONTROLLER())
 
         rm.add_option(Option.CT_ID(ct_id))
-        self.ipc.send(RFSERVER_RFPROXY_CHANNEL, str(ct_id), rm)
+        rm.set_from(RFSERVER_ID)
+        rm.set_to(str(ct_id))
+        self.ipc_for_proxy.send(rm)
 
     def config_dp(self, ct_id, dp_id):
         if is_rfvs(dp_id):
@@ -387,8 +388,10 @@ class RFServer(RFProtocolFactory, IPC.IPCMessageProcessor):
     def reset_vm_port(self, vm_id, vm_port):
         if vm_id is None:
             return
-        self.ipc.send(RFCLIENT_RFSERVER_CHANNEL, str(vm_id),
-                      PortConfig(vm_id=vm_id, vm_port=vm_port, operation_id=1))
+        msg = PortConfig(vm_id=vm_id, vm_port=vm_port, operation_id=1)
+        msg.set_from(RFSERVER_ID)
+        msg.set_to(str(vm_id))
+        self.ipc_for_client.send(msg)
         self.log.info("Resetting client port (vm_id=%s, vm_port=%i)" %
                       (format_id(vm_id), vm_port))
 
@@ -402,7 +405,9 @@ class RFServer(RFProtocolFactory, IPC.IPCMessageProcessor):
             msg = DataPlaneMap(ct_id=entry.ct_id,
                                dp_id=entry.dp_id, dp_port=entry.dp_port,
                                vs_id=vs_id, vs_port=vs_port)
-            self.ipc.send(RFSERVER_RFPROXY_CHANNEL, str(entry.ct_id), msg)
+            msg.set_from(RFSERVER_ID)
+            msg.set_to(str(entry.ct_id))
+            self.ipc_for_proxy.send(msg)
             self.log.info("Mapping client-datapath association "
                           "(vm_id=%s, vm_port=%i, dp_id=%s, "
                           "dp_port=%i, vs_id=%s, vs_port=%i)" %

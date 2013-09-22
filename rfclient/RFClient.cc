@@ -67,7 +67,7 @@ uint64_t get_interface_id(const char *ifname) {
 RFClient::RFClient(uint64_t id, const string &address) {
     this->id = id;
     syslog(LOG_INFO, "Starting RFClient (vm_id=%s)", to_string<uint64_t>(this->id).c_str());
-    ipc = (IPCMessageService*) new MongoIPCMessageService(address, MONGO_DB_NAME, to_string<uint64_t>(this->id));
+    ipc = new MongoIpc(to_string<uint64_t>(this->id), RFCLIENT_RFSERVER_CHANNEL);
 
     this->init_ports = 0;
     this->load_interfaces();
@@ -77,13 +77,15 @@ RFClient::RFClient(uint64_t id, const string &address) {
         ifacesMap[i.name] = i;
 
         PortRegister msg(this->id, i.port, i.hwaddress);
-        this->ipc->send(RFCLIENT_RFSERVER_CHANNEL, RFSERVER_ID, msg);
+        msg.setFrom(to_string<uint64_t>(this->id));
+        msg.setTo(RFSERVER_ID);
+        this->ipc->send(&msg);
         syslog(LOG_INFO, "Registering client port (vm_port=%d)", i.port);
     }
 
     this->startFlowTable();
 
-    ipc->listen(RFCLIENT_RFSERVER_CHANNEL, this, this, true);
+    ipc->listen(this);
 }
 
 void RFClient::startFlowTable() {
@@ -91,10 +93,10 @@ void RFClient::startFlowTable() {
     t.detach();
 }
 
-bool RFClient::process(const string &, const string &, const string &, IPCMessage& msg) {
-    int type = msg.get_type();
+void RFClient::process(IpcMessage* msg) {
+    int type = msg->get_type();
     if (type == PORT_CONFIG) {
-        PortConfig *config = dynamic_cast<PortConfig*>(&msg);
+        PortConfig *config = dynamic_cast<PortConfig*>(msg);
         uint32_t vm_port = config->get_vm_port();
         uint32_t operation_id = config->get_operation_id();
 
@@ -115,10 +117,6 @@ bool RFClient::process(const string &, const string &, const string &, IPCMessag
             down_ports.push_back(vm_port);
         }
     }
-    else
-        return false;
-
-    return true;
 }
 
 int RFClient::send_packet(const char ethName[], uint64_t vm_id, uint8_t port) {
@@ -246,6 +244,8 @@ void RFClient::load_interfaces() {
 	        get_hwaddr_byname(ifa->ifa_name, hwaddress);
 	        string ifaceName = ifa->ifa_name;
 	        size_t pos = ifaceName.find_first_of("123456789");
+	        if (pos == string::npos)
+	        	continue;
 	        string port_num = ifaceName.substr(pos, ifaceName.length() - pos + 1);
 	        uint32_t port_id = atoi(port_num.c_str());
 
@@ -280,7 +280,7 @@ int main(int argc, char* argv[]) {
     char c;
     stringstream ss;
     string id;
-    string address = MONGO_ADDRESS;
+    string address = MONGO_CONNECTION_URI;
 
     while ((c = getopt (argc, argv, "n:i:a:")) != -1)
         switch (c) {

@@ -45,7 +45,7 @@ struct rtnl_handle FlowTable::rthNeigh;
 
 map<string, Interface> FlowTable::interfaces;
 vector<uint32_t>* FlowTable::down_ports;
-IPCMessageService* FlowTable::ipc;
+Ipc* FlowTable::ipc;
 uint64_t FlowTable::vm_id;
 
 typedef std::pair<RouteModType,RouteEntry> PendingRoute;
@@ -71,7 +71,7 @@ void FlowTable::RTPollingCb() {
 #endif /* FPM_ENABLED */
 
 void FlowTable::start(uint64_t vm_id, map<string, Interface> interfaces,
-                      IPCMessageService* ipc, vector<uint32_t>* down_ports) {
+                      Ipc* ipc, vector<uint32_t>* down_ports) {
     FlowTable::vm_id = vm_id;
     FlowTable::interfaces = interfaces;
     FlowTable::ipc = ipc;
@@ -608,8 +608,10 @@ int FlowTable::sendToHw(RouteModType mod, const IPAddress& addr,
     /* Add the output port. Even if we're removing the route, RFServer requires
      * the port to determine which datapath to send to. */
     rm.add_action(Action(RFAT_OUTPUT, local_iface.port));
+    rm.setFrom(to_string<uint64_t>(FlowTable::vm_id));
+    rm.setTo(RFSERVER_ID);
 
-    FlowTable::ipc->send(RFCLIENT_RFSERVER_CHANNEL, RFSERVER_ID, rm);
+    FlowTable::ipc->send(&rm);
     return 0;
 }
 
@@ -680,8 +682,11 @@ void FlowTable::updateNHLFE(nhlfe_msg_t *nhlfe_msg) {
     }
 
     msg.add_action(Action(RFAT_OUTPUT, iface.port));
+    msg.setFrom(to_string<uint64_t>(FlowTable::vm_id));
+    msg.setTo(RFSERVER_ID);
 
-    FlowTable::ipc->send(RFCLIENT_RFSERVER_CHANNEL, RFSERVER_ID, msg);
+
+    FlowTable::ipc->send(&msg);
 
     return;
 }
