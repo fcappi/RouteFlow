@@ -90,16 +90,16 @@ reset() {
     done
 
     echo_bold "-> Shutting down MongoDB instance 1..."
-    mongod -f /home/vmware/RouteFlow/rftest/mongo/conf/master.conf --replSet rs0 --shutdown
+    mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/master.conf --replSet rs0 --shutdown
 
     echo_bold "-> Shutting down MongoDB instance 2..."
-    mongod -f /home/vmware/RouteFlow/rftest/mongo/conf/slave1.conf --replSet rs0 --shutdown
+    mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/slave1.conf --replSet rs0 --shutdown
 
     echo_bold "-> Shutting down MongoDB instance 3..."
-    mongod -f /home/vmware/RouteFlow/rftest/mongo/conf/slave2.conf --replSet rs0 --shutdown
+    mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/slave2.conf --replSet rs0 --shutdown
 
     echo_bold "-> Deleting data from previous runs...";
-    rm -rf /home/vmware/RouteFlow/rftest/mongo/data/*/*
+    rm -rf /home/routeflow/RouteFlow/rftest/mongo/data/*/*
     rm -rf /var/lib/lxc/rfvm1/rootfs/opt/rfclient;
 }
 reset 1
@@ -113,19 +113,19 @@ if [ "$ACTION" != "RESET" ]; then
     ovs-vsctl --may-exist add-port lxcbr0 rfvm1.0
 
     echo_bold "-> Setting up MongoDB instance 1..."
-    mongod -f /home/vmware/RouteFlow/rftest/mongo/conf/master.conf --replSet rs0
+    mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/master.conf --replSet rs0
 
     echo_bold "-> Setting up MongoDB instance 2..."
-    mongod -f /home/vmware/RouteFlow/rftest/mongo/conf/slave1.conf --replSet rs0
+    mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/slave1.conf --replSet rs0
 
     echo_bold "-> Setting up MongoDB instance 3..."
-    mongod -f /home/vmware/RouteFlow/rftest/mongo/conf/slave2.conf --replSet rs0
+    mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/slave2.conf --replSet rs0
 
     echo_bold "-> Initializing Replica set..."
     #wait_port_listen 27017
     #wait_port_listen 27018
     #wait_port_listen 27019
-    mongo --quiet 192.168.10.1:27017 /home/vmware/RouteFlow/rftest/initReplicaSet.js;
+    mongo --quiet 192.168.10.1:27017 /home/routeflow/RouteFlow/rftest/initReplicaSet.js;
     echo_bold "-> Waiting 10s for replica set intialization..."
     sleep 10
 
