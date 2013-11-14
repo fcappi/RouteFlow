@@ -71,15 +71,18 @@ reset() {
         done
     done
 
+    echo_bold "-> Shutting down MongoDB instance 1..."
+    mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/master.conf --replSet rs0 --shutdown
+
+    echo_bold "-> Shutting down MongoDB instance 2..."
+    mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/slave1.conf --replSet rs0 --shutdown
+
+    echo_bold "-> Shutting down MongoDB instance 3..."
+    mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/slave2.conf --replSet rs0 --shutdown
+
+
     echo_bold "-> Deleting (previous) run data...";
-    mongo db --eval "
-        db.getCollection('rftable').drop(); 
-        db.getCollection('rfconfig').drop(); 
-        db.getCollection('rfstats').drop(); 
-        db.getCollection('rfclient<->rfserver').drop(); 
-        db.getCollection('rfserver<->rfproxy').drop();
-    "
-        
+    rm -rf /home/routeflow/RouteFlow/rftest/mongo/data/*/*   
     rm -rf /var/lib/lxc/rfvmA/rootfs/opt/rfclient;
     rm -rf /var/lib/lxc/rfvmB/rootfs/opt/rfclient;
     rm -rf /var/lib/lxc/rfvmC/rootfs/opt/rfclient;
@@ -91,10 +94,25 @@ trap "reset 0; exit 0" INT
 echo_bold "-> Setting up the management bridge (lxcbr0)..."
 ifconfig lxcbr0 $MONGODB_ADDR up
 
-echo_bold "-> Setting up MongoDB..."
-sed -i "/bind_ip/c\bind_ip = 127.0.0.1,$MONGODB_ADDR" $MONGODB_CONF
-service mongodb restart
-wait_port_listen $MONGODB_PORT
+
+    echo_bold "-> Setting up MongoDB instance 1..."
+    mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/master.conf --replSet rs0
+
+    echo_bold "-> Setting up MongoDB instance 2..."
+    mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/slave1.conf --replSet rs0
+
+    echo_bold "-> Setting up MongoDB instance 3..."
+    mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/slave2.conf --replSet rs0
+
+    echo_bold "-> Initializing Replica set..."
+    #wait_port_listen 27017
+    #wait_port_listen 27018
+    #wait_port_listen 27019
+    mongo --quiet 192.168.10.1:27017 /home/routeflow/RouteFlow/rftest/initReplicaSet.js;
+    echo_bold "-> Waiting 10s for replica set intialization..."
+    sleep 10
+
+
 
 echo_bold "-> Configuring the virtual machines..."
 # Create the rfclient dir
