@@ -45,8 +45,13 @@ class MongoTable:
         for i in xrange(0, MONGO_MAX_RETRIES):
             try:
                 results = self.connection[self.db_name][self.collection].find(kwargs)
-                
-                break;
+                entries = []
+                for result in results:
+                    entry = MongoTableEntryFactory.make(self.entry_type)
+                    entry.from_dict(result)
+                    entries.append(entry)
+                return entries
+                #break;
             
             except:
                 if (i + 1) == MONGO_MAX_RETRIES:
@@ -57,13 +62,6 @@ class MongoTable:
                 time.sleep(MONGO_RETRY_INTERVAL)
                     
         print "[OK]RFTABLE: I got the entries!"
-        
-        entries = []
-        for result in results:
-            entry = MongoTableEntryFactory.make(self.entry_type)
-            entry.from_dict(result)
-            entries.append(entry)
-        return entries
 
     def set_entry(self, entry):
         # TODO: enforce (*_id, *_port) uniqueness restriction
