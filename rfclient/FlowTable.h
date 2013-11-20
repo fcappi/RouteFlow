@@ -11,7 +11,7 @@
 #include "fpm.h"
 #include "fpm_lsp.h"
 
-#include "ipc/IPC.h"
+#include "ipc/Ipc.h"
 #include "ipc/RFProtocol.h"
 #include "types/IPAddress.h"
 #include "types/MACAddress.h"
@@ -32,7 +32,7 @@ class FlowTable {
 
         static void clear();
         static void interrupt();
-        static void start(uint64_t vm_id, map<string, Interface> interfaces, IPCMessageService* ipc, vector<uint32_t>* down_ports);
+        static void start(uint64_t vm_id, map<string, Interface> interfaces, Ipc* ipc, vector<uint32_t>* down_ports);
         static void print_test();
 
         static int updateHostTable(const struct sockaddr_nl*,
@@ -57,7 +57,7 @@ class FlowTable {
         static const MACAddress MAC_ADDR_NONE;
         static map<string, Interface> interfaces;
         static vector<uint32_t>* down_ports;
-        static IPCMessageService* ipc;
+        static Ipc* ipc;
         static uint64_t vm_id;
 
         static boost::thread GWResolver;

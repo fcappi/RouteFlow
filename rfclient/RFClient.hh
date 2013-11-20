@@ -2,19 +2,18 @@
 #include <map>
 #include <vector>
 
-#include "ipc/IPC.h"
-#include "ipc/MongoIPC.h"
+#include "ipc/Ipc.h"
+#include "ipc/MongoIpc.h"
 #include "ipc/RFProtocol.h"
-#include "ipc/RFProtocolFactory.h"
 #include "FlowTable.h"
 
-class RFClient : private RFProtocolFactory, private IPCMessageProcessor {
+class RFClient : private IpcMessageProcessor {
     public:
         RFClient(uint64_t id, const string &address);
 
     private:
         FlowTable* flowTable;
-        IPCMessageService* ipc;
+        Ipc* ipc;
         uint64_t id;
 
         map<string, Interface> ifacesMap;
@@ -25,7 +24,7 @@ class RFClient : private RFProtocolFactory, private IPCMessageProcessor {
         int init_ports;
 
         void startFlowTable();
-        bool process(const string &from, const string &to, const string &channel, IPCMessage& msg);
+        void process(IpcMessage* msg);
 
         int send_packet(const char ethName[], uint64_t vm_id, uint8_t port);
         int set_hwaddr_byname(const char * ifname, uint8_t hwaddr[], int16_t flags);

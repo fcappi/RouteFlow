@@ -1,8 +1,9 @@
 import pymongo as mongo
 import bson
+import time
 
 from rflib.defs import *
-from rflib.ipc.MongoIPC import format_address
+from rflib.ipc.MongoUtils import MongoFactory
 
 RFENTRY_IDLE_VM_PORT = 1
 RFENTRY_IDLE_DP_PORT = 2
@@ -31,31 +32,88 @@ class MongoTableEntryFactory:
 
 class MongoTable:
     def __init__(self, address, name, entry_type):
-        self.address = format_address(address)
-        self.connection = mongo.Connection(*self.address)
-        self.data = self.connection[MONGO_DB_NAME][name]
+        mf = MongoFactory()
+        self.connection = mf.create_connection()
+        self.db_name = MONGO_DB_NAME
+        self.collection = name
         self.entry_type = entry_type
 
     def get_entries(self, **kwargs):
         for (k, v) in kwargs.items():
             kwargs[k] = str(v)
-        results = self.data.find(kwargs)
-        entries = []
-        for result in results:
-            entry = MongoTableEntryFactory.make(self.entry_type)
-            entry.from_dict(result)
-            entries.append(entry)
-        return entries
+        #results = self.data.find(kwargs)
+        for i in xrange(0, MONGO_MAX_RETRIES):
+            try:
+                results = self.connection[self.db_name][self.collection].find(kwargs)
+                entries = []
+                for result in results:
+                    entry = MongoTableEntryFactory.make(self.entry_type)
+                    entry.from_dict(result)
+                    entries.append(entry)
+                return entries
+                
+                #break;
+            
+            except:
+                if (i + 1) == MONGO_MAX_RETRIES:
+                    print "[ERROR]RFTABLE: Could not get the entries. Error: (", sys.exc_info(), ")"
+                    sys.exit(1)
+                
+                print "[RECOVERING]RFTABLE: Could not get the entries. Trying again in ", MONGO_RETRY_INTERVAL, " seconds. [", (i+1), "]"
+                time.sleep(MONGO_RETRY_INTERVAL)
+                    
+        print "[OK]RFTABLE: I got the entries!"           
+        
 
     def set_entry(self, entry):
-        # TODO: enforce (*_id, *_port) uniqueness restriction
-        entry.id = self.data.save(entry.to_dict())
+        print entry.__str__()
+        print "COLLECTION:", self.collection
+        for i in xrange(0, MONGO_MAX_RETRIES):
+            try:
+                entry.id = self.connection[self.db_name][self.collection].save(entry.to_dict())
+                
+                break;
+            except:
+                if (i + 1) == MONGO_MAX_RETRIES:
+                    print "[ERROR]RFTABLE: Could not set the entry ", entry, ". Error: (", sys.exc_info(), ")"
+                    sys.exit(1)
+                
+                print "[RECOVERING]RFTABLE: Could not set the entry. Trying again in ", MONGO_RETRY_INTERVAL, " seconds. [", (i+1), "]"
+                time.sleep(MONGO_RETRY_INTERVAL)
+                  
+        print "[OK]RFTable: Entry ", entry, " successful set"
 
     def remove_entry(self, entry):
-        self.data.remove(entry.id)
+        for i in xrange(0, MONGO_MAX_RETRIES):
+            try:
+                self.connection[self.db_name][self.collection].remove(entry.id)
+                
+                break;
+            except:
+                if (i + 1) == MONGO_MAX_RETRIES:
+                    print "[ERROR]RFTABLE: Could not remove the entry ", entry, ". Error: (", sys.exc_info(), ")"
+                    sys.exit(1)
+                
+                print "[RECOVERING]RFTABLE: Could not remove the entry. Trying again in ", MONGO_RETRY_INTERVAL, " seconds. [", (i+1), "]"
+                time.sleep(MONGO_RETRY_INTERVAL)
+        
+        print "[OK]RFTable: Entry ", entry, " removed successful" 
 
     def clear(self):
-        self.data.remove()
+        for i in xrange(0, MONGO_MAX_RETRIES):
+            try:
+                self.connection[self.db_name][self.collection].remove()
+                
+                break;
+            except:
+                if (i + 1) == MONGO_MAX_RETRIES:
+                    print "[ERROR]RFTABLE: Could not clear. Error: (", sys.exc_info(), ")"
+                    sys.exit(1)
+                
+                print "[RECOVERING]RFTABLE: Could not clear. Trying again in ", MONGO_RETRY_INTERVAL, " seconds. [", (i+1), "]"
+                time.sleep(MONGO_RETRY_INTERVAL)
+                   
+        print "[OK]RFTable: Cleared"
 
     def __str__(self):
         s = ""
@@ -470,9 +528,9 @@ class RFConfigEntry:
         self.dp_port = dp_port
 
     def __str__(self):
-        return "vm_id: %s vm_port: %s "\
+        return "id: %s vm_id: %s vm_port: %s "\
                "dp_id: %s dp_port: %s "\
-               "ct_id: %s" % (str(self.vm_id), str(self.vm_port),
+               "ct_id: %s" % (str(self.id), str(self.vm_id), str(self.vm_port),
                               str(self.dp_id), str(self.dp_port),
                               str(self.ct_id))
 

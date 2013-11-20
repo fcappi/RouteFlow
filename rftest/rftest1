@@ -12,7 +12,7 @@ MONGODB_CONF=/etc/mongodb.conf
 MONGODB_PORT=27017
 MONGODB_ADDR="192.168.10.1"
 CONTROLLER_PORT=6633
-RF_HOME=..
+RF_HOME=`cd ..;pwd`
 export PATH=$PATH:/usr/local/bin:/usr/local/sbin
 export PYTHONPATH=$PYTHONPATH:$RF_HOME
 
@@ -89,14 +89,17 @@ reset() {
         rm -rf $LXCDIR/$vm/rootfs/var/run/network/ifstate;
     done
 
+    echo_bold "-> Shutting down MongoDB instance 1..."
+    mongod -f $RF_HOME/rftest/mongo/conf/master.conf --replSet rs0 --shutdown
+
+    echo_bold "-> Shutting down MongoDB instance 2..."
+    mongod -f $RF_HOME/rftest/mongo/conf/slave1.conf --replSet rs0 --shutdown
+
+    echo_bold "-> Shutting down MongoDB instance 3..."
+    mongod -f $RF_HOME/rftest/mongo/conf/slave2.conf --replSet rs0 --shutdown
+
     echo_bold "-> Deleting data from previous runs...";
-    mongo db --quiet --eval "
-        db.getCollection('rftable').drop();
-        db.getCollection('rfconfig').drop();
-        db.getCollection('rfstats').drop();
-        db.getCollection('rfclient<->rfserver').drop();
-        db.getCollection('rfserver<->rfproxy').drop();
-    "
+    rm -rf $RF_HOME/rftest/mongo/data/*/*
     rm -rf /var/lib/lxc/rfvm1/rootfs/opt/rfclient;
 }
 reset 1
@@ -107,10 +110,28 @@ if [ "$ACTION" != "RESET" ]; then
     ifconfig lxcbr0 $MONGODB_ADDR up
     ovs-vsctl --may-exist add-port lxcbr0 rfvm1.0
 
-    echo_bold "-> Setting up MongoDB..."
-    sed -i "/bind_ip/c\bind_ip = 127.0.0.1,$MONGODB_ADDR" $MONGODB_CONF
-    service mongodb restart
-    wait_port_listen $MONGODB_PORT
+    echo_bold "-> Setting up MongoDB instance 1..."
+    mongod -f $RF_HOME/rftest/mongo/conf/master.conf --replSet rs0
+
+    echo_bold "-> Setting up MongoDB instance 2..."
+    mongod -f $RF_HOME/rftest/mongo/conf/slave1.conf --replSet rs0
+
+    echo_bold "-> Setting up MongoDB instance 3..."
+    mongod -f $RF_HOME/rftest/mongo/conf/slave2.conf --replSet rs0
+
+    echo_bold "-> Initializing Replica set..."
+
+    mongo --quiet 192.168.10.1:27017/db --eval "rs.initiate()"
+    # conferring if instance exists to master
+    while [[ `mongo --quiet 192.168.10.1:27017/db --eval "db.isMaster().ismaster"` == false ]]; do
+        echo "Waiting instance becomes primary..."
+        sleep 5       
+    done
+    # setting other instance 
+    mongo 192.168.10.1:27017/db --eval "load('$RF_HOME/rftest/initReplicaSet.js')"
+
+    echo_bold "-> Waiting 20s for replica set intialization..."
+    sleep 20
 
     echo_bold "-> Starting the rfvm1 virtual machine..."
     # Create the rfclient dir

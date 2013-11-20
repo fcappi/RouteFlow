@@ -1,8 +1,20 @@
 #ifndef __DEFS_H__
 #define __DEFS_H__
 
-#define MONGO_ADDRESS "192.168.10.1:27017"
+/*
+ * MONGO CONNECTION URI
+ *
+ * Single server connection: "host:port"
+ * Replica Set connection:       "replica_set_name/host1:port1,host2:port2,...,hostN:portN"
+ *
+ */
+#define MONGO_CONNECTION_URI "rs0/192.168.10.1:27017,192.168.10.1:27018,192.168.10.1:27019"
+//#define MONGO_ADDRESS "rs0/192.169.1.1:27017,192.169.1.1:27018,192.169.1.1:27019"
 #define MONGO_DB_NAME "db"
+// When mongo connection fails, how often it will retry operation
+#define MONGO_RETRY_INTERVAL 15 //seconds
+// Maximum times to retry operation, when mongo connection fails
+#define MONGO_MAX_RETRIES 3
 
 #define RFCLIENT_RFSERVER_CHANNEL "rfclient<->rfserver"
 #define RFSERVER_RFPROXY_CHANNEL "rfserver<->rfproxy"

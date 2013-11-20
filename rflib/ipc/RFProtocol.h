@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "IPC.h"
+#include "Ipc.h"
 #include "IPAddress.h"
 #include "MACAddress.h"
 #include "converter.h"
@@ -21,7 +21,7 @@ enum {
 	ROUTE_MOD
 };
 
-class PortRegister : public IPCMessage {
+class PortRegister : public IpcMessage {
     public:
         PortRegister();
         PortRegister(uint64_t vm_id, uint32_t vm_port, MACAddress hwaddress);
@@ -36,8 +36,8 @@ class PortRegister : public IPCMessage {
         void set_hwaddress(MACAddress hwaddress);
 
         virtual int get_type();
-        virtual void from_BSON(const char* data);
-        virtual const char* to_BSON();
+
+
         virtual string str();
 
     private:
@@ -46,7 +46,7 @@ class PortRegister : public IPCMessage {
         MACAddress hwaddress;
 };
 
-class PortConfig : public IPCMessage {
+class PortConfig : public IpcMessage {
     public:
         PortConfig();
         PortConfig(uint64_t vm_id, uint32_t vm_port, uint32_t operation_id);
@@ -61,8 +61,8 @@ class PortConfig : public IPCMessage {
         void set_operation_id(uint32_t operation_id);
 
         virtual int get_type();
-        virtual void from_BSON(const char* data);
-        virtual const char* to_BSON();
+
+
         virtual string str();
 
     private:
@@ -71,7 +71,7 @@ class PortConfig : public IPCMessage {
         uint32_t operation_id;
 };
 
-class DatapathPortRegister : public IPCMessage {
+class DatapathPortRegister : public IpcMessage {
     public:
         DatapathPortRegister();
         DatapathPortRegister(uint64_t ct_id, uint64_t dp_id, uint32_t dp_port);
@@ -86,8 +86,8 @@ class DatapathPortRegister : public IPCMessage {
         void set_dp_port(uint32_t dp_port);
 
         virtual int get_type();
-        virtual void from_BSON(const char* data);
-        virtual const char* to_BSON();
+
+
         virtual string str();
 
     private:
@@ -96,7 +96,7 @@ class DatapathPortRegister : public IPCMessage {
         uint32_t dp_port;
 };
 
-class DatapathDown : public IPCMessage {
+class DatapathDown : public IpcMessage {
     public:
         DatapathDown();
         DatapathDown(uint64_t ct_id, uint64_t dp_id);
@@ -108,8 +108,8 @@ class DatapathDown : public IPCMessage {
         void set_dp_id(uint64_t dp_id);
 
         virtual int get_type();
-        virtual void from_BSON(const char* data);
-        virtual const char* to_BSON();
+
+
         virtual string str();
 
     private:
@@ -117,7 +117,7 @@ class DatapathDown : public IPCMessage {
         uint64_t dp_id;
 };
 
-class VirtualPlaneMap : public IPCMessage {
+class VirtualPlaneMap : public IpcMessage {
     public:
         VirtualPlaneMap();
         VirtualPlaneMap(uint64_t vm_id, uint32_t vm_port, uint64_t vs_id, uint32_t vs_port);
@@ -135,8 +135,8 @@ class VirtualPlaneMap : public IPCMessage {
         void set_vs_port(uint32_t vs_port);
 
         virtual int get_type();
-        virtual void from_BSON(const char* data);
-        virtual const char* to_BSON();
+
+
         virtual string str();
 
     private:
@@ -146,7 +146,7 @@ class VirtualPlaneMap : public IPCMessage {
         uint32_t vs_port;
 };
 
-class DataPlaneMap : public IPCMessage {
+class DataPlaneMap : public IpcMessage {
     public:
         DataPlaneMap();
         DataPlaneMap(uint64_t ct_id, uint64_t dp_id, uint32_t dp_port, uint64_t vs_id, uint32_t vs_port);
@@ -167,8 +167,8 @@ class DataPlaneMap : public IPCMessage {
         void set_vs_port(uint32_t vs_port);
 
         virtual int get_type();
-        virtual void from_BSON(const char* data);
-        virtual const char* to_BSON();
+
+
         virtual string str();
 
     private:
@@ -179,7 +179,7 @@ class DataPlaneMap : public IPCMessage {
         uint32_t vs_port;
 };
 
-class RouteMod : public IPCMessage {
+class RouteMod : public IpcMessage {
     public:
         RouteMod();
         RouteMod(uint8_t mod, uint64_t id, std::vector<Match> matches, std::vector<Action> actions, std::vector<Option> options);
@@ -203,8 +203,8 @@ class RouteMod : public IPCMessage {
         void add_option(const Option& option);
 
         virtual int get_type();
-        virtual void from_BSON(const char* data);
-        virtual const char* to_BSON();
+
+
         virtual string str();
 
     private:

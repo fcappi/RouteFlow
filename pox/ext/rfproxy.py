@@ -7,10 +7,9 @@ from pox.core import core
 from pox.openflow.libopenflow_01 import *
 import pymongo as mongo
 
-import rflib.ipc.IPC as IPC
-import rflib.ipc.MongoIPC as MongoIPC
+import rflib.ipc.Ipc as Ipc
+import rflib.ipc.MongoIpc as MongoIpc
 from rflib.ipc.RFProtocol import *
-from rflib.ipc.RFProtocolFactory import RFProtocolFactory
 from rflib.defs import *
 from rfofmsg import *
 
@@ -64,8 +63,7 @@ netmask_prefix = lambda a: sum([bin(int(x)).count("1") for x in a.split(".", 4)]
 
 # TODO: add proper support for ID
 ID = 0
-ipc = MongoIPC.MongoIPCMessageService(MONGO_ADDRESS, MONGO_DB_NAME, str(ID),
-                                      threading.Thread, time.sleep)
+ipc = MongoIpc.MongoIpc(str(ID), RFSERVER_RFPROXY_CHANNEL)
 table = Table()
 
 # Logging
@@ -109,7 +107,9 @@ def on_datapath_up(event):
     for port in ports:
         if port <= OFPP_MAX:
             msg = DatapathPortRegister(ct_id=ID, dp_id=dp_id, dp_port=port)
-            ipc.send(RFSERVER_RFPROXY_CHANNEL, RFSERVER_ID, msg)
+            msg.set_from(str(ID))
+            msg.set_to(RFSERVER_ID)
+            ipc.send(msg)
             log.info("Registering datapath port (dp_id=%s, dp_port=%d)",
                      format_id(dp_id), port)
 
@@ -121,7 +121,9 @@ def on_datapath_down(event):
     table.delete_dp(dp_id)
 
     msg = DatapathDown(ct_id=ID, dp_id=dp_id)
-    ipc.send(RFSERVER_RFPROXY_CHANNEL, RFSERVER_ID, msg)
+    msg.set_from(str(ID))
+    msg.set_to(RFSERVER_ID)
+    ipc.send(msg)
 
 def on_packet_in(event):
     packet = event.parsed
@@ -141,7 +143,9 @@ def on_packet_in(event):
 
         msg = VirtualPlaneMap(vm_id=vm_id, vm_port=vm_port,
                               vs_id=event.dpid, vs_port=event.port)
-        ipc.send(RFSERVER_RFPROXY_CHANNEL, RFSERVER_ID, msg)
+        msg.set_from(str(ID))
+        msg.set_to(RFSERVER_ID)
+        ipc.send(msg)
         return
 
     # If the packet came from RFVS, redirect it to the right switch port
@@ -164,8 +168,8 @@ def on_packet_in(event):
                       format_id(dp_id), in_port)
 
 # IPC message Processing
-class RFProcessor(IPC.IPCMessageProcessor):
-    def process(self, from_, to, channel, msg):
+class RFProcessor(Ipc.IpcMessageProcessor):
+    def process(self, msg):
         topology = core.components['topology']
         type_ = msg.get_type()
         if type_ == ROUTE_MOD:
@@ -183,12 +187,11 @@ class RFProcessor(IPC.IPCMessageProcessor):
             table.update_dp_port(msg.get_dp_id(), msg.get_dp_port(),
                                  msg.get_vs_id(), msg.get_vs_port())
 
-        return True
 
 # Initialization
 def launch ():
     core.openflow.addListenerByName("ConnectionUp", on_datapath_up)
     core.openflow.addListenerByName("ConnectionDown", on_datapath_down)
     core.openflow.addListenerByName("PacketIn", on_packet_in)
-    ipc.listen(RFSERVER_RFPROXY_CHANNEL, RFProtocolFactory(), RFProcessor(), False)
+    ipc.parallel_listen(RFProcessor())
     log.info("RFProxy running.")
