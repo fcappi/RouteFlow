@@ -54,7 +54,7 @@ class MongoIpc(Ipc):
                 except:                    
                     if (i + 1) == MONGO_MAX_RETRIES:
                         print "[ERROR]MongoIPC: Could not get unread messages. Error: (", sys.exc_info(), ")"                                   
-                        sys.exit(2)
+                        return
                         
                     print "[RECOVERING]MongoIPC: Could not get unread messages. Trying again in ", MONGO_RETRY_INTERVAL, " seconds. [",  (i+1),  "]"                
                     time.sleep(MONGO_RETRY_INTERVAL)
