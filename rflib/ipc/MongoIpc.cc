@@ -45,7 +45,7 @@ void MongoIpc::send(IpcMessage* message) {
 				//TODO improve this message
 				cout << "[ERROR]Mongo: Message could not be sent. Error: ("
 						<< e.what() << ")" << endl;
-				exit(1);
+				return;
 			}
 			cout << "[ERROR]MongoIPC: Message not sent. Trying again in "
 					<< MONGO_RETRY_INTERVAL << " seconds. [" << (i + 1) << "]"
