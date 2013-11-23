@@ -9,9 +9,9 @@ SCRIPT_NAME="rftest4"
 LXCDIR=/var/lib/lxc
 MONGODB_CONF=/etc/mongodb.conf
 MONGODB_PORT=27017
-MONGODB_ADDR=192.168.10.1
+MONGODB_ADDR="192.168.10.1"
 CONTROLLER_PORT=6633
-RF_HOME=..
+RF_HOME=`cd ..;pwd`
 export PATH=$PATH:/usr/local/bin:/usr/local/sbin
 export PYTHONPATH=$PYTHONPATH:$RF_HOME
 
@@ -71,12 +71,21 @@ reset() {
         done
     done
 
-    echo_bold "-> Kill MongoDB instance 1, 2, 3..."     
-    MONGOPID=`ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}'`
+    echo_bold "-> Kill all services MongoDB..."    
+    MONGOPID=`ps -ef | grep 'mongo' | grep -v grep | awk '{print $2}'`
     kill -15 $MONGOPID &> /dev/null
 
-    echo_bold "-> Deleting (previous) run data...";
-    rm -rf /home/routeflow/RouteFlow/rftest/mongo/data/*/*   
+    echo_bold "-> Shutting down MongoDB instance 1..."
+    mongod -f $RF_HOME/rftest/mongo/conf/master.conf --replSet rs0 --shutdown &> /dev/null
+
+    echo_bold "-> Shutting down MongoDB instance 2..."
+    mongod -f $RF_HOME/rftest/mongo/conf/slave1.conf --replSet rs0 --shutdown &> /dev/null
+
+    echo_bold "-> Shutting down MongoDB instance 3..."
+    mongod -f $RF_HOME/rftest/mongo/conf/slave2.conf --replSet rs0 --shutdown &> /dev/null
+
+    echo_bold "-> Deleting data from previous runs...";
+    rm -rf $RF_HOME/rftest/mongo/data/*/*
     rm -rf /var/lib/lxc/rfvmV/rootfs/opt/rfclient;
 }
 reset 1
@@ -86,13 +95,13 @@ echo_bold "-> Setting up the management bridge (lxcbr0)..."
 ifconfig lxcbr0 $MONGODB_ADDR up
 
 echo_bold "-> Setting up MongoDB instance 1..."
-mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/master.conf --replSet rs0
+mongod -f $RF_HOME/rftest/mongo/conf/master.conf --replSet rs0
 
 echo_bold "-> Setting up MongoDB instance 2..."
-mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/slave1.conf --replSet rs0
+mongod -f $RF_HOME/rftest/mongo/conf/slave1.conf --replSet rs0
 
 echo_bold "-> Setting up MongoDB instance 3..."
-mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/slave2.conf --replSet rs0
+mongod -f $RF_HOME/rftest/mongo/conf/slave2.conf --replSet rs0
 
 echo_bold "-> Initializing Replica set..."
 
@@ -103,7 +112,7 @@ while [[ `mongo --quiet 192.168.10.1:27017/db --eval "db.isMaster().ismaster"` =
     sleep 5       
 done
 # setting other instance 
-mongo 192.168.10.1:27017/db --eval "load('/home/routeflow/RouteFlow/rftest/initReplicaSet.js')"
+mongo 192.168.10.1:27017/db --eval "load('$RF_HOME/rftest/initReplicaSet.js')"
 
 echo_bold "-> Waiting 20s for replica set intialization..."
 sleep 20
@@ -137,7 +146,7 @@ lxc-start -n rfvmV -d
 
 echo_bold "-> Starting the control plane network (dp0 VS)..."
 ovs-vsctl add-br dp0
-for i in $(seq 9);
+for i in $(seq 20);
 do
 ovs-vsctl add-port dp0 rfvmV.$i;
 done
@@ -147,13 +156,13 @@ ovs-vsctl set-controller dp0 tcp:127.0.0.1:$CONTROLLER_PORT
 echo_bold "---"
 echo_bold "This test is up and running."
 echo_bold "Start Mininet:"
-echo_bold "  $ sudo mn --custom mininet/custom/topo-8sw-8host.py --topo=rftest4"
+echo_bold "  $ sudo mn --custom mininet/custom/topo-1sw-20host.py --topo=rftest4"
 echo_bold "    --controller=remote,ip=[host address],port=6633 --pre=ipconf4"
 echo_bold "Replace [host address] with the address of this host's interface "
 echo_bold "connected to the Mininet VM."
 echo_bold "Then try pinging everything:"
 echo_bold "  mininet> pingall"
-echo_bold "You can stop this test by pressing CTRL+C."
+echo_bold "You can stop this test by pressing Ctrl+C."
 echo_bold "---"
 wait
 

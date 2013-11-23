@@ -1,47 +1,35 @@
 
 Files:
 
+rftest1 --> rftest with LXC Container b1, b2, Mongo Replication actived and executable in RF_VM  
+rftest1config.cvs --> configuration file for rftest1
 
-rftest1 - rftest with LXC Container b1, b2, Mongo Replication actived and executable in RF_VM  
-rftest1config.cvs - configuration file for rftest1
+rftest2 --> rftest with VMs, rfvmA, rfvmB, rfvmC, rfvmD (LXC Container), Mongo Replication actived and executable in Mininet
+rftest2config.cvs --> Configuration file for rftest2 (dp_id = switches)
+topo-4sw-4host.py --> Configuration file = 4 switch and 4 hosts in Mininet
+ipconf --> Set gateway default for hosts to rftest2 
 
+# Simple Test in MININET
+rftest3 --> rftest with VMs, rfvmT (LXC Container), Mongo Replication actived and executable in MININET
+rftest3config.cvs --> Configuration file for rftest3 (dp_id = switch)
+topo-1sw-2host.py --> Configuration file = 1 switch and 2 hosts in Mininet
+ipconf3 --> Set gateway default for hosts to rftest3
 
-rftest2 - rftest with VMs, rfvmA, rfvmB, rfvmC, rfvmD (LXC Container), Mongo Replication actived and executable in Mininet
-rftest2config.cvs - Configuration file for rftest2 (dp_id = switches)
-topo-4sw-4host.py - Configuration file = 4 switch and 4 hosts in Mininet
-ipconf - Set gateway default for hosts to rftest2 
+# Hard Test in MININET
+rftest4 --> rftest with VMs, rfvmV (LXC Container), Mongo Replication actived and executable in MININET 
+rftest4config.cvs --> Configuration file for rftest4 (dp_id = switch)
+topo-10sw-20host.py --> Configuration file = 10 switch and 20 hosts in Mininet
+ipconf4 --> Set gateway default for hosts to rftest4
 
-
-rftest3 - rftest with Mongo Replication actived and executable in Mininet (iperf)
-rftest3config.cvs - Configuration file for rftest3 (dp_id = switch)
-topo-1sw-2host.py - Configuration file = 1 switch and 2 hosts in Mininet
-ipconf3 - Set gateway default for hosts to rftest3
-
-
-rftest4 - rftest with VMs, rfvmV (LXC Container), Mongo Replication actived and executable in Mininet 
-rftest4config.cvs - Configuration file for rftest4 (dp_id = switch)
-topo-10sw-20host.py - Configuration file = 10 switch and 20 hosts in Mininet
-ipconf4 - Set gateway default for hosts to rftest4
-
-
-rftest5 - rftest with Mongo Replication actived and executable in physical environment CPqD  
-rftest5config.cvs - Configuration file for rftest5 (dp_id = netfpga)
+# Physical Test CPqD
+rftest5 --> rftest with VMs, rfvmZ (LXC Container), Mongo Replication actived and executable in physical environment CPqD  
+rftest5config.cvs --> Configuration file for rftest5 (dp_id = netfpga)
 
 ___________________________________________________________________________
 
-
-Directory:
-
-example_rftest:
-	rftest1 - rftest with LXC Container b1, b2 actived and executable in RF_VM
-	rftest2config.cvs - configuration file for rftest2  
-
-	rftest2 - rftest with VMs, rfvmA, rfvmB, rfvmC, rfvmD (LXC Container) active and executable in Mininet
-	rftest2config.cvs - configuration file for rftest2
-
 config:
-	rfvmT - VM for the rftest3 (executable in Mininet)
+	rfvmT --> VM for the rftest3 (executable in Mininet)
 
-	rfvmV - VM for the rftest4 (executable in Mininet)
+	rfvmV --> VM for the rftest4 (executable in Mininet)
 				
-	rfvmZ - VM for the rftest5 (executable in physical environment CPqD)
+	rfvmZ --> VM for the rftest5 (executable in physical environment CPqD)

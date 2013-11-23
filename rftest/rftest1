@@ -12,7 +12,7 @@ MONGODB_CONF=/etc/mongodb.conf
 MONGODB_PORT=27017
 MONGODB_ADDR="192.168.10.1"
 CONTROLLER_PORT=6633
-RF_HOME=..
+RF_HOME=`cd ..;pwd`
 export PATH=$PATH:/usr/local/bin:/usr/local/sbin
 export PYTHONPATH=$PYTHONPATH:$RF_HOME
 
@@ -89,21 +89,21 @@ reset() {
         rm -rf $LXCDIR/$vm/rootfs/var/run/network/ifstate;
     done
 
-    echo_bold "-> Kill MongoDB instance 1, 2, 3..."    
-    MONGOPID=`ps -ef | grep 'mongod' | grep -v grep | awk '{print $2}'`
+    echo_bold "-> Kill all services MongoDB..."    
+    MONGOPID=`ps -ef | grep 'mongo' | grep -v grep | awk '{print $2}'`
     kill -15 $MONGOPID &> /dev/null
 
-    # echo_bold "-> Shutting down MongoDB instance 1..."
-    # mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/master.conf --replSet rs0 --shutdown
+    echo_bold "-> Shutting down MongoDB instance 1..."
+    mongod -f $RF_HOME/rftest/mongo/conf/master.conf --replSet rs0 --shutdown &> /dev/null
 
-    # echo_bold "-> Shutting down MongoDB instance 2..."
-    # mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/slave1.conf --replSet rs0 --shutdown
+    echo_bold "-> Shutting down MongoDB instance 2..."
+    mongod -f $RF_HOME/rftest/mongo/conf/slave1.conf --replSet rs0 --shutdown &> /dev/null
 
-    # echo_bold "-> Shutting down MongoDB instance 3..."
-    # mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/slave2.conf --replSet rs0 --shutdown
+    echo_bold "-> Shutting down MongoDB instance 3..."
+    mongod -f $RF_HOME/rftest/mongo/conf/slave2.conf --replSet rs0 --shutdown &> /dev/null
 
     echo_bold "-> Deleting data from previous runs...";
-    rm -rf /home/routeflow/RouteFlow/rftest/mongo/data/*/*
+    rm -rf $RF_HOME/rftest/mongo/data/*/*
     rm -rf /var/lib/lxc/rfvm1/rootfs/opt/rfclient;
 }
 reset 1
@@ -116,16 +116,15 @@ if [ "$ACTION" != "RESET" ]; then
     ovs-vsctl --may-exist add-port lxcbr0 rfvm1.0
 
     echo_bold "-> Setting up MongoDB instance 1..."
-    mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/master.conf --replSet rs0
+    mongod -f $RF_HOME/rftest/mongo/conf/master.conf --replSet rs0
 
     echo_bold "-> Setting up MongoDB instance 2..."
-    mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/slave1.conf --replSet rs0
+    mongod -f $RF_HOME/rftest/mongo/conf/slave1.conf --replSet rs0
 
     echo_bold "-> Setting up MongoDB instance 3..."
-    mongod -f /home/routeflow/RouteFlow/rftest/mongo/conf/slave2.conf --replSet rs0
+    mongod -f $RF_HOME/rftest/mongo/conf/slave2.conf --replSet rs0
 
     echo_bold "-> Initializing Replica set..."
-
     mongo --quiet 192.168.10.1:27017/db --eval "rs.initiate()"
     # conferring if instance exists to master
     while [[ `mongo --quiet 192.168.10.1:27017/db --eval "db.isMaster().ismaster"` == false ]]; do
@@ -133,7 +132,7 @@ if [ "$ACTION" != "RESET" ]; then
         sleep 5       
     done
     # setting other instance 
-    mongo 192.168.10.1:27017/db --eval "load('/home/routeflow/RouteFlow/rftest/initReplicaSet.js')"
+    mongo 192.168.10.1:27017/db --eval "load('$RF_HOME/rftest/initReplicaSet.js')"
 
     echo_bold "-> Waiting 20s for replica set intialization..."
     sleep 20
