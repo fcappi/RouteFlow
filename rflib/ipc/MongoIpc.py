@@ -192,6 +192,17 @@ class MongoIpcMessageFactory:
             ipc_message.set_actions(message_content["actions"])
             ipc_message.set_options(message_content["options"])
 
+        elif int(message[FIELD_NAME_TYPE]) == RFProtocol.CONTROLLER_REGISTER:
+            ipc_message = RFProtocol.ControllerRegister()
+            ipc_message.set_ct_addr(message_content["ct_addr"])
+            ipc_message.set_ct_port(message_content["ct_port"])
+            ipc_message.set_ct_role(message_content["ct_role"])
+
+        elif int(message[FIELD_NAME_TYPE]) == RFProtocol.ELECT_MASTER:
+            ipc_message = RFProtocol.ElectMaster()
+            ipc_message.set_ct_addr(message_content["ct_addr"])
+            ipc_message.set_ct_port(message_content["ct_port"])
+
         else:
             return None
 
@@ -255,6 +266,15 @@ class MongoIpcMessageFactory:
             message_content["matches"] = ipc_message.get_matches()
             message_content["actions"] = ipc_message.get_actions()
             message_content["options"] = ipc_message.get_options()
+
+ 	elif int(ipc_message.get_type()) == RFProtocol.CONTROLLER_REGISTER:
+            message_content["ct_addr"] = str(ipc_message.get_ct_addr())
+            message_content["ct_port"] = str(ipc_message.get_ct_port())
+            message_content["ct_role"] = str(ipc_message.get_ct_role())
+
+ 	elif int(ipc_message.get_type()) == RFProtocol.ELECT_MASTER:
+            message_content["ct_addr"] = str(ipc_message.get_ct_addr())
+            message_content["ct_port"] = str(ipc_message.get_ct_port())
 
         else:
             return None

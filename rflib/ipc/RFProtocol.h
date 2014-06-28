@@ -18,7 +18,9 @@ enum {
 	DATAPATH_DOWN,
 	VIRTUAL_PLANE_MAP,
 	DATA_PLANE_MAP,
-	ROUTE_MOD
+	ROUTE_MOD,
+	CONTROLLER_REGISTER,
+	ELECT_MASTER
 };
 
 class PortRegister : public IpcMessage {
@@ -213,6 +215,48 @@ class RouteMod : public IpcMessage {
         std::vector<Match> matches;
         std::vector<Action> actions;
         std::vector<Option> options;
+};
+
+class ControllerRegister : public IPCMessage {
+    public:
+        ControllerRegister();
+        ControllerRegister(IPAddress ct_addr, uint32_t ct_port, string ct_role);
+
+        IPAddress get_ct_addr();
+        void set_ct_addr(IPAddress ct_addr);
+
+        uint32_t get_ct_port();
+        void set_ct_port(uint32_t ct_port);
+
+        string get_ct_role();
+        void set_ct_role(string ct_role);
+
+        virtual int get_type();
+        virtual string str();
+
+    private:
+        IPAddress ct_addr;
+        uint32_t ct_port;
+        string ct_role;
+};
+
+class ElectMaster : public IPCMessage {
+    public:
+        ElectMaster();
+        ElectMaster(IPAddress ct_addr, uint32_t ct_port);
+
+        IPAddress get_ct_addr();
+        void set_ct_addr(IPAddress ct_addr);
+
+        uint32_t get_ct_port();
+        void set_ct_port(uint32_t ct_port);
+
+        virtual int get_type();
+        virtual string str();
+
+    private:
+        IPAddress ct_addr;
+        uint32_t ct_port;
 };
 
 #endif /* __RFPROTOCOL_H__ */

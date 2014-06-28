@@ -1,10 +1,3 @@
-/*
- * MongoIpcMessageFactory.cpp
- *
- *  Created on: Aug 3, 2013
- *      Author: vmware
- */
-
 #include "MongoIpc.h"
 #include "RFProtocol.h"
 #include <iostream>
@@ -78,6 +71,22 @@ IpcMessage* MongoIpcMessageFactory::fromMessageType(mongo::BSONObj* mongoMessage
 		((RouteMod*)ipcMessage)->set_options(OptionList::to_vector(messageContent["options"].Array()));
 		break;
 		//TODO find an alternative to match, option and actions converter
+
+	case CONTROLLER_REGISTER:
+		ipcMessage = new ControllerRegister();
+		((ControllerRegister*)ipcMessage)->set_ct_addr(IPAddress(IPV4, messageContent["ct_addr"].String()));
+		((ControllerRegister*)ipcMessage)->set_ct_port(string_to<uint32_t>(messageContent["ct_port"].String()));
+		((ControllerRegister*)ipcMessage)->set_ct_role(messageContent["ct_role"].String());
+		break;
+		//TODO find an alternative to match, option and actions converter
+	
+	case ELECT_MASTER:
+		ipcMessage = new ElectMaster();
+		((ElectMaster*)ipcMessage)->set_ct_addr(IPAddress(IPV4, messageContent["ct_addr"].String()));
+		((ElectMaster*)ipcMessage)->set_ct_port(string_to<uint32_t>(messageContent["ct_port"].String()));
+		break;
+		//TODO find an alternative to match, option and actions converter
+
 
 	default:
 		//TODO use exceptions
@@ -154,6 +163,17 @@ mongo::BSONObjBuilder* MongoIpcMessageFactory::fromMessageType(IpcMessage* messa
 		content->appendArray("matches", MatchList::to_BSON(((RouteMod*) message)->get_matches()));
 		content->appendArray("actions", ActionList::to_BSON(((RouteMod*) message)->get_actions()));
 		content->appendArray("options", OptionList::to_BSON(((RouteMod*) message)->get_options()));
+		break;
+
+	case CONTROLLER_REGISTER:
+		content->append("ct_addr", ((ControllerRegister*) message)->get_ct_addr().toString());
+		content->append("ct_port", to_string<uint32_t>(((ControllerRegister*) message)->get_ct_port()));
+		content->append("ct_role", ((ControllerRegister*) message)->get_ct_role());
+		break;
+
+	case ELECT_MASTER:
+		content->append("ct_addr", ((ElectMaster*) message)->get_ct_addr().toString());
+		content->append("ct_port", to_string<uint32_t>(((ElectMaster*) message)->get_ct_port()));
 		break;
 
 	default:

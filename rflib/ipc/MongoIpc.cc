@@ -35,7 +35,6 @@ void MongoIpc::send(IpcMessage* message) {
 
 	mongo::BSONObjBuilder* dataBuilder = (mongo::BSONObjBuilder*) MongoIpcMessageFactory::fromMessageType(message);
 	//mongo::BSONObjBuilder teste;
-	//teste.append("Teste", "HAHAHA");
 	for (int i = 0; i < MONGO_MAX_RETRIES; i++) {
 		try {
 			this->databaseConnection->insert(this->channel, dataBuilder->obj());
